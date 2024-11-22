@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 
-export interface Todo {
+interface Todo {
   id: string // 할 일 ID
   order: number // 할 일 순서
   title: string // 할 일 제목
@@ -24,9 +24,15 @@ export function useFetchTodos() {
         {
           method: 'GET',
           headers
-          // body: // xxx
         }
       )
+      // if (!res.ok) {
+      //   redirect('/error')
+      // }
+      // const data =  await res.json()
+      // if (!Array.isArray(data)) {
+      //   redirect('/error')
+      // }
       return await res.json()
     },
     staleTime: 1000 * 60 * 5
@@ -85,6 +91,7 @@ export function useCreateTodo() {
 }
 
 export function useUpdateTodo() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (todo: Todo) => {
       const res = await fetch(
@@ -98,7 +105,11 @@ export function useUpdateTodo() {
       return await res.json()
     },
     onMutate: () => {},
-    onSuccess: () => {},
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['todos']
+      })
+    },
     onError: () => {},
     onSettled: () => {}
   })
