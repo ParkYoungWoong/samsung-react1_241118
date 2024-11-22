@@ -11,7 +11,7 @@ export default async function (req: VercelRequest, res: VercelResponse) {
     endpoint = '',
     method = 'GET',
     data
-  } = (req.body || {}) as Partial<RequestBody>
+  } = (JSON.parse(req.body || '{}') || {}) as Partial<RequestBody>
   const response = await fetch(
     `https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/${endpoint}`,
     {
