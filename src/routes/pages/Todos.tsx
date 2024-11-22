@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useFetchTodos, useCreateTodo } from '@/hooks/todo'
+import { useFetchTodos, useCreateTodo, useTodoFilterStore } from '@/hooks/todo'
 import Loader from '@/components/Loader'
 import { Link, Outlet } from 'react-router-dom'
 
@@ -7,6 +7,7 @@ export default function Todos() {
   const { data: todos, isLoading } = useFetchTodos()
   const { mutate } = useCreateTodo()
   const [title, setTitle] = useState('')
+  const setFilterStatus = useTodoFilterStore(state => state.setFilterStatus)
 
   function createTodo(event?: React.KeyboardEvent<HTMLInputElement>) {
     if (event?.nativeEvent.isComposing) return
@@ -24,6 +25,12 @@ export default function Todos() {
       />
       <button onClick={() => createTodo()}>추가</button>
 
+      <div>
+        <button onClick={() => setFilterStatus('all')}>전체</button>
+        <button onClick={() => setFilterStatus('todo')}>할 일</button>
+        <button onClick={() => setFilterStatus('done')}>완료</button>
+      </div>
+
       {isLoading ? (
         <Loader />
       ) : (
@@ -31,7 +38,9 @@ export default function Todos() {
           {todos?.map(todo => {
             return (
               <li key={todo.id}>
-                <Link to={`/todos/${todo.id}`}>{todo.title}</Link>
+                <Link to={`/todos/${todo.id}`}>
+                  ({todo.done ? 'v' : ' '}) {todo.title}
+                </Link>
               </li>
             )
           })}

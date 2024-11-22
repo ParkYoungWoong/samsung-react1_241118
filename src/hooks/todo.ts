@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { create } from 'zustand'
 
 interface Todo {
   id: string // 할 일 ID
@@ -9,6 +10,20 @@ interface Todo {
   updatedAt: string // 할 일 수정일
 }
 
+type FilterStatus = 'all' | 'todo' | 'done'
+
+export const useTodoFilterStore = create<{
+  filterStatus: FilterStatus
+  setFilterStatus: (filter: FilterStatus) => void
+}>(set => ({
+  filterStatus: 'all',
+  setFilterStatus: filter => {
+    set({
+      filterStatus: filter
+    })
+  }
+}))
+
 const headers = {
   'Content-Type': 'application/json',
   apikey: 'KDT8_bcAWVpD8',
@@ -16,6 +31,7 @@ const headers = {
 }
 
 export function useFetchTodos() {
+  const filterStatus = useTodoFilterStore(state => state.filterStatus)
   return useQuery<Todo[]>({
     queryKey: ['todos'],
     queryFn: async () => {
@@ -26,16 +42,21 @@ export function useFetchTodos() {
           headers
         }
       )
-      // if (!res.ok) {
-      //   redirect('/error')
-      // }
-      // const data =  await res.json()
-      // if (!Array.isArray(data)) {
-      //   redirect('/error')
-      // }
       return await res.json()
     },
-    staleTime: 1000 * 60 * 5
+    staleTime: 1000 * 60 * 5,
+    select: todos => {
+      return todos.filter(todo => {
+        switch (filterStatus) {
+          case 'all':
+            return true
+          case 'todo':
+            return !todo.done
+          case 'done':
+            return todo.done
+        }
+      })
+    }
   })
 }
 
@@ -112,5 +133,25 @@ export function useUpdateTodo() {
     },
     onError: () => {},
     onSettled: () => {}
+  })
+}
+
+export function useDeleteTodo() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (todo: Todo) => {
+      await fetch(
+        `https://asia-northeast3-heropy-api.cloudfunctions.net/api/todos/${todo.id}`,
+        {
+          method: 'DELETE',
+          headers
+        }
+      )
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['todos']
+      })
+    }
   })
 }
